@@ -1068,13 +1068,13 @@ public class ElasticInferenceServiceTests extends ESSingleNodeTestCase {
     public void testUnifiedCompletionError() {
         var e = assertThrows(UnifiedChatCompletionException.class, () -> testUnifiedStream(404, """
             {
-                "error": "The model `rainbow-sprinkles` does not exist or you do not have access to it."
+                "error": "The model `gp-llm-v1` does not exist or you do not have access to it."
             }"""));
         assertThat(
             e.getMessage(),
             equalTo(
                 "Received an unsuccessful status code for request from inference entity id [id] status "
-                    + "[404]. Error message: [The model `rainbow-sprinkles` does not exist or you do not have access to it.]"
+                    + "[404]. Error message: [The model `gp-llm-v1` does not exist or you do not have access to it.]"
             )
         );
     }

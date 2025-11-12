@@ -55,11 +55,11 @@ public class AuthorizationTaskExecutorIT extends ESSingleNodeTestCase {
         }
         """;
 
-    public static final String AUTHORIZED_RAINBOW_SPRINKLES_RESPONSE = """
+    public static final String AUTHORIZED_GP_LLM_V1_RESPONSE = """
         {
             "models": [
                 {
-                  "model_name": "rainbow-sprinkles",
+                  "model_name": "gp-llm-v1",
                   "task_types": ["chat"]
                 }
             ]
@@ -116,7 +116,7 @@ public class AuthorizationTaskExecutorIT extends ESSingleNodeTestCase {
     public void testCreatesEisChatCompletionEndpoint() throws Exception {
         assertNoAuthorizedEisEndpoints();
 
-        webServer.enqueue(new MockResponse().setResponseCode(200).setBody(AUTHORIZED_RAINBOW_SPRINKLES_RESPONSE));
+        webServer.enqueue(new MockResponse().setResponseCode(200).setBody(AUTHORIZED_GP_LLM_V1_RESPONSE));
         restartPollingTaskAndWaitForAuthResponse();
 
         assertChatCompletionEndpointExists();
@@ -189,7 +189,7 @@ public class AuthorizationTaskExecutorIT extends ESSingleNodeTestCase {
     public void testCreatesEisChatCompletion_DoesNotRemoveEndpointWhenNoLongerAuthorized() throws Exception {
         assertNoAuthorizedEisEndpoints();
 
-        webServer.enqueue(new MockResponse().setResponseCode(200).setBody(AUTHORIZED_RAINBOW_SPRINKLES_RESPONSE));
+        webServer.enqueue(new MockResponse().setResponseCode(200).setBody(AUTHORIZED_GP_LLM_V1_RESPONSE));
         restartPollingTaskAndWaitForAuthResponse();
 
         assertChatCompletionEndpointExists();
@@ -205,23 +205,23 @@ public class AuthorizationTaskExecutorIT extends ESSingleNodeTestCase {
         var eisEndpoints = getEisEndpoints();
         assertThat(eisEndpoints.size(), is(1));
 
-        var rainbowSprinklesModel = eisEndpoints.get(0);
-        assertChatCompletionUnparsedModel(rainbowSprinklesModel);
+        var gpLLMv1Model = eisEndpoints.get(0);
+        assertChatCompletionUnparsedModel(gpLLMv1Model);
         assertTrue(
             modelRegistry.containsPreconfiguredInferenceEndpointId(InternalPreconfiguredEndpoints.DEFAULT_CHAT_COMPLETION_ENDPOINT_ID_V1)
         );
     }
 
-    private void assertChatCompletionUnparsedModel(UnparsedModel rainbowSprinklesModel) {
-        assertThat(rainbowSprinklesModel.taskType(), is(TaskType.CHAT_COMPLETION));
-        assertThat(rainbowSprinklesModel.service(), is(ElasticInferenceService.NAME));
-        assertThat(rainbowSprinklesModel.inferenceEntityId(), is(InternalPreconfiguredEndpoints.DEFAULT_CHAT_COMPLETION_ENDPOINT_ID_V1));
+    private void assertChatCompletionUnparsedModel(UnparsedModel gpLLMv1Model) {
+        assertThat(gpLLMv1Model.taskType(), is(TaskType.CHAT_COMPLETION));
+        assertThat(gpLLMv1Model.service(), is(ElasticInferenceService.NAME));
+        assertThat(gpLLMv1Model.inferenceEntityId(), is(InternalPreconfiguredEndpoints.DEFAULT_CHAT_COMPLETION_ENDPOINT_ID_V1));
     }
 
     public void testCreatesChatCompletion_AndThenCreatesTextEmbedding() throws Exception {
         assertNoAuthorizedEisEndpoints();
 
-        webServer.enqueue(new MockResponse().setResponseCode(200).setBody(AUTHORIZED_RAINBOW_SPRINKLES_RESPONSE));
+        webServer.enqueue(new MockResponse().setResponseCode(200).setBody(AUTHORIZED_GP_LLM_V1_RESPONSE));
         restartPollingTaskAndWaitForAuthResponse();
 
         assertChatCompletionEndpointExists();

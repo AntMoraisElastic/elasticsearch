@@ -32,7 +32,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.elasticsearch.xpack.inference.external.http.Utils.getUrl;
-import static org.elasticsearch.xpack.inference.integration.AuthorizationTaskExecutorIT.AUTHORIZED_RAINBOW_SPRINKLES_RESPONSE;
+import static org.elasticsearch.xpack.inference.integration.AuthorizationTaskExecutorIT.AUTHORIZED_GP_LLM_V1_RESPONSE;
 import static org.elasticsearch.xpack.inference.integration.AuthorizationTaskExecutorIT.EMPTY_AUTH_RESPONSE;
 import static org.elasticsearch.xpack.inference.integration.AuthorizationTaskExecutorIT.cancelAuthorizationTask;
 import static org.elasticsearch.xpack.inference.integration.AuthorizationTaskExecutorIT.waitForTask;
@@ -107,7 +107,7 @@ public class AuthorizationTaskExecutorMultipleNodesIT extends ESIntegTestCase {
         );
 
         // queue a response that authorizes one model
-        webServer.enqueue(new MockResponse().setResponseCode(200).setBody(AUTHORIZED_RAINBOW_SPRINKLES_RESPONSE));
+        webServer.enqueue(new MockResponse().setResponseCode(200).setBody(AUTHORIZED_GP_LLM_V1_RESPONSE));
 
         assertTrue("expected the node to shutdown properly", internalCluster().stopNode(nodeNameMapping.get(pollerTask.node())));
 
@@ -125,13 +125,13 @@ public class AuthorizationTaskExecutorMultipleNodesIT extends ESIntegTestCase {
                 .toList();
             assertThat(eisEndpoints.size(), is(1));
 
-            var rainbowSprinklesEndpoint = eisEndpoints.get(0);
-            assertThat(rainbowSprinklesEndpoint.getService(), is(ElasticInferenceService.NAME));
+            var gpLLMv1Endpoint = eisEndpoints.get(0);
+            assertThat(gpLLMv1Endpoint.getService(), is(ElasticInferenceService.NAME));
             assertThat(
-                rainbowSprinklesEndpoint.getInferenceEntityId(),
+                gpLLMv1Endpoint.getInferenceEntityId(),
                 is(InternalPreconfiguredEndpoints.DEFAULT_CHAT_COMPLETION_ENDPOINT_ID_V1)
             );
-            assertThat(rainbowSprinklesEndpoint.getTaskType(), is(TaskType.CHAT_COMPLETION));
+            assertThat(gpLLMv1Endpoint.getTaskType(), is(TaskType.CHAT_COMPLETION));
         });
     }
 

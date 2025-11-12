@@ -23,7 +23,7 @@ public class MockElasticInferenceServiceAuthorizationServer implements TestRule 
     private static final Logger logger = LogManager.getLogger(MockElasticInferenceServiceAuthorizationServer.class);
     private final MockWebServer webServer = new MockWebServer();
 
-    public static MockElasticInferenceServiceAuthorizationServer enabledWithRainbowSprinklesAndElser() {
+    public static MockElasticInferenceServiceAuthorizationServer enabledWithGPLLMv1AndElser() {
         var server = new MockElasticInferenceServiceAuthorizationServer();
 
         server.enqueueAuthorizeAllModelsResponse();
@@ -35,7 +35,7 @@ public class MockElasticInferenceServiceAuthorizationServer implements TestRule 
             {
                 "models": [
                     {
-                      "model_name": "rainbow-sprinkles",
+                      "model_name": "gp-llm-v1",
                       "task_types": ["chat"]
                     },
                     {

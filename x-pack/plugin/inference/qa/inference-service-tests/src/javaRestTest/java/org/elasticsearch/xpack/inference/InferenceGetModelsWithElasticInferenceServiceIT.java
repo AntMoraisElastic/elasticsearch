@@ -49,7 +49,7 @@ public class InferenceGetModelsWithElasticInferenceServiceIT extends BaseMockEIS
             assertEquals("chat_completion", model.get("task_type"));
         }
 
-        assertInferenceIdTaskType(allModels, ".rainbow-sprinkles-elastic", TaskType.CHAT_COMPLETION);
+        assertInferenceIdTaskType(allModels, ".gp-llm-v1-elastic", TaskType.CHAT_COMPLETION);
         assertInferenceIdTaskType(allModels, ".elser-2-elastic", TaskType.SPARSE_EMBEDDING);
         assertInferenceIdTaskType(allModels, ".jina-embeddings-v3", TaskType.TEXT_EMBEDDING);
         assertInferenceIdTaskType(allModels, ".elastic-rerank-v1", TaskType.RERANK);

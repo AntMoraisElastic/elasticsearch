@@ -27,9 +27,9 @@ import static java.util.stream.Collectors.toMap;
  */
 public class InternalPreconfiguredEndpoints {
 
-    // rainbow-sprinkles
-    public static final String DEFAULT_CHAT_COMPLETION_MODEL_ID_V1 = "rainbow-sprinkles";
-    public static final String DEFAULT_CHAT_COMPLETION_ENDPOINT_ID_V1 = ".rainbow-sprinkles-elastic";
+    // gp-llm-v1
+    public static final String DEFAULT_CHAT_COMPLETION_MODEL_ID_V1 = "gp-llm-v1";
+    public static final String DEFAULT_CHAT_COMPLETION_ENDPOINT_ID_V1 = ".gp-llm-v1-elastic";
 
     // elser-2
     public static final String DEFAULT_ELSER_2_MODEL_ID = "elser_model_2";

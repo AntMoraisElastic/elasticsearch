@@ -34,6 +34,7 @@ import org.elasticsearch.xpack.esql.expression.function.fulltext.FullTextFunctio
 import org.elasticsearch.xpack.esql.expression.function.grouping.Categorize;
 import org.elasticsearch.xpack.esql.expression.function.grouping.GroupingFunction;
 import org.elasticsearch.xpack.esql.io.stream.PlanStreamInput;
+import org.elasticsearch.xpack.esql.plan.logical.join.AbstractSubqueryJoin;
 
 import java.io.IOException;
 import java.util.List;
@@ -277,27 +278,63 @@ public class Aggregate extends UnaryPlan
     }
 
     protected void checkTimeSeriesAggregates(Failures failures) {
-        Holder<Boolean> isTimeSeriesIndexMode = new Holder<>(false);
-        child().forEachDown(p -> {
-            if (p instanceof EsRelation er && er.indexMode().isTsdb()) {
-                isTimeSeriesIndexMode.set(true);
-            }
-        });
-        if (isTimeSeriesIndexMode.get()) {
+        if (hasTimeSeriesSource(child())) {
             return;
         }
-        forEachExpression(
-            TimeSeriesAggregateFunction.class,
-            r -> failures.add(fail(r, "time_series aggregate[{}] can only be used with the TS command", r.sourceText()))
-        );
+        Holder<Boolean> hasTimeSeriesAgg = new Holder<>(false);
+        forEachExpression(TimeSeriesAggregateFunction.class, r -> hasTimeSeriesAgg.set(true));
+        if (hasTimeSeriesAgg.get() == false) {
+            return;
+        }
+        if (child().anyMatch(p -> p instanceof UnionAll)) {
+            failures.add(
+                fail(
+                    this,
+                    "time-series aggregation [{}] cannot be applied over a union of data sources; "
+                        + "apply the time-series aggregation inside each subquery instead",
+                    sourceText()
+                )
+            );
+        } else {
+            forEachExpression(
+                TimeSeriesAggregateFunction.class,
+                r -> failures.add(fail(r, "time_series aggregate[{}] can only be used with the TS command", r.sourceText()))
+            );
+        }
+    }
+
+    /**
+     * Returns {@code true} if {@code plan} (or any non-{@link UnionAll} descendant, excluding the right-hand side
+     * of an {@link AbstractSubqueryJoin}) holds an {@link EsRelation} in time-series index mode.
+     * <p>
+     * Traversal stops at {@link UnionAll} boundaries so that a {@code TS} source nested inside a {@code FROM}
+     * subquery (e.g. {@code FROM (TS k8s), (FROM sample_data)}) does not allow time-series aggregate functions
+     * in the outer {@code STATS}: the {@code TS} relation is isolated inside an independent subquery and does
+     * not grant TS semantics to this aggregate.
+     */
+    private static boolean hasTimeSeriesSource(LogicalPlan plan) {
+        if (plan instanceof EsRelation er && er.indexMode().isTsdb()) {
+            return true;
+        }
+        if (plan instanceof UnionAll) {
+            return false;
+        }
+        if (plan instanceof AbstractSubqueryJoin join) {
+            return hasTimeSeriesSource(join.left());
+        }
+        for (LogicalPlan child : plan.children()) {
+            if (hasTimeSeriesSource(child)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void checkMultipleScoreAggregations(Failures failures) {
-        Holder<Boolean> hasScoringAggs = new Holder<>();
         forEachExpression(FilteredExpression.class, fe -> {
             if (fe.delegate() instanceof AggregateFunction aggregateFunction) {
-                if (aggregateFunction.field() instanceof MetadataAttribute metadataAttribute) {
-                    if (MetadataAttribute.SCORE.equals(metadataAttribute.name())) {
+                for (Expression field : aggregateFunction.fields()) {
+                    if (field instanceof MetadataAttribute metadataAttribute && MetadataAttribute.SCORE.equals(metadataAttribute.name())) {
                         if (fe.filter().anyMatch(e -> e instanceof FullTextFunction)) {
                             failures.add(fail(fe, "cannot use _score aggregations with a WHERE filter in a STATS command"));
                         }
@@ -433,7 +470,7 @@ public class Aggregate extends UnaryPlan
                     failures.add(fail(f, "nested aggregations [{}] not allowed inside other aggregations [{}]", f, af));
                 }
             });
-            checkNested.accept(af.field());
+            af.fields().forEach(checkNested);
             af.parameters().forEach(checkNested);
         } else if (e instanceof GroupingFunction gf) {
             // optimizer will later unroll expressions with aggs and non-aggs with a grouping function into an EVAL, but that will no longer

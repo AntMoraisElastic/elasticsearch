@@ -40,10 +40,6 @@ public abstract class AbstractColumnarArrayOrderSyntheticSourceTestCase extends 
      */
     protected abstract String fieldTypeName();
 
-    public final void setUp() throws Exception {
-        super.setUp();
-    }
-
     protected MapperService columnarMapperService() throws IOException {
         Settings settings = Settings.builder().put(IndexSettings.MODE.getKey(), IndexMode.COLUMNAR.getName()).build();
         return createMapperService(settings, mapping(b -> b.startObject("field").field("type", fieldTypeName()).endObject()));
@@ -93,6 +89,17 @@ public abstract class AbstractColumnarArrayOrderSyntheticSourceTestCase extends 
         var mapper = columnarMapper();
         assertEquals("""
             {"field":[null]}""", syntheticSource(mapper, b -> b.startArray("field").nullValue().endArray()));
+    }
+
+    /**
+     * A scalar {@code null} (written via {@code b.nullField("field")}) is the field being absent, the same as
+     * {@link #testEmptyArray()}. In a strictly columnar index a null counts only where it is an element of the field's own array,
+     * which is the position synthetic source has to put it back into; a null standing on its own has no such position and writes
+     * no slot. See {@link MultiValuedBinaryDocValuesField#keepsNullSlot}.
+     */
+    public void testScalarNullIsAbsent() throws IOException {
+        var mapper = columnarMapper();
+        assertEquals("{}", syntheticSource(mapper, b -> b.nullField("field")));
     }
 
     public void testEmptyArray() throws IOException {
